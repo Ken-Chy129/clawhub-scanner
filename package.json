@@ -1,0 +1,35 @@
+{
+  "name": "clawhub-scanner",
+  "version": "1.0.0",
+  "description": "Security scanner for ClawHub / OpenClaw AI skills — static analysis + LLM-based evaluation",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "main": "./src/index.mjs",
+  "bin": {
+    "clawhub-scanner": "./bin/clawhub-scan.mjs",
+    "clawhub-scan": "./bin/clawhub-scan.mjs"
+  },
+  "files": [
+    "src/",
+    "bin/"
+  ],
+  "scripts": {
+    "scan": "node bin/clawhub-scan.mjs",
+    "test": "node --test src/**/*.test.mjs"
+  },
+  "keywords": [
+    "clawhub",
+    "openclaw",
+    "security",
+    "scanner",
+    "skill",
+    "ai",
+    "agent"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
