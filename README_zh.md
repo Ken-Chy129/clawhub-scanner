@@ -4,9 +4,19 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> [ClawHub](https://clawhub.com) / [OpenClaw](https://openclaw.com) AI 技能安全扫描器 — 静态分析 + LLM 深度评估，零依赖。
+[English](./README.md)
 
-AI Agent 技能（插件）可以执行 Shell 命令、访问凭证、读取文件、发送网络请求。**clawhub-scanner** 帮助你在安装前发现恶意或可疑的技能。
+> 这就是 [ClawHub](https://clawhub.com) 平台审核每一个技能的方式 — 现在作为独立 npm 包开源，你可以在本地运行同样的安全检测。
+
+## ClawHub 是如何检测技能的
+
+当一个技能发布到 ClawHub 时，它会经过一套多层安全检测流水线。**这个包就是那套流水线本身**，从 ClawHub 平台中抽取出来，让你可以在本地运行完全相同的检查：
+
+1. **静态正则扫描** — 快速离线的模式匹配，检测已知恶意特征（危险执行、数据窃取、加密挖矿、Prompt 注入等）
+2. **LLM 安全评估** — 以 LLM 作为评审，从 5 个安全维度评估技能的实际行为是否与其声明的用途一致
+3. **Prompt 注入检测** — 预扫描过滤器，捕捉试图操纵 LLM 评估器的注入攻击
+
+这不是一个通用安全扫描器。它专为 ClawHub / OpenClaw 技能格式设计，理解 AI Agent 插件特有的威胁模型：技能可以指示 AI Agent 执行 Shell 命令、访问凭证、读取文件、通过网络发送数据。
 
 ## 功能特性
 
@@ -182,6 +192,53 @@ console.log(fullResult.confidence) // 'high' | 'medium' | 'low'
 | `suspicious.prompt_injection_instructions` | warn | Markdown 中的 Prompt 注入 |
 | `suspicious.install_untrusted_source` | warn | 短链接或裸 IP 地址 |
 
+## 工作原理 — ClawHub 安全检测流水线
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    技能发布                              │
+│             (SKILL.md + 代码文件)                        │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│  第一层：静态正则扫描                                     │
+│  ─────────────────                                      │
+│  • 匹配已知恶意特征模式                                   │
+│  • 检查代码中的危险 API 调用                               │
+│  • 检查配置文件中的可疑 URL                                │
+│  • 检查 Markdown 中的 Prompt 注入                         │
+│  结果：clean / suspicious / malicious                    │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│  第二层：Prompt 注入预过滤                                │
+│  ──────────────────────                                 │
+│  • 检测「忽略之前的所有指令」等模式                         │
+│  • 捕获 System Prompt 覆盖尝试                           │
+│  • 标记隐藏的 base64 块和 Unicode 控制字符                 │
+│  • 将检测信号作为对抗性上下文传递给 LLM                     │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│  第三层：LLM 评审评估                                     │
+│  ────────────────                                       │
+│  五维度一致性分析：                                       │
+│  1. 目的 ↔ 能力 一致性                                    │
+│  2. 指令范围边界                                         │
+│  3. 安装机制风险                                         │
+│  4. 凭证比例合理性                                       │
+│  5. 持久化与权限评估                                      │
+│                                                         │
+│  判定：benign / suspicious / malicious                   │
+│  + 置信度 + 面向用户的自然语言指导                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+这个扫描器的核心理念是**一致性检测，而非恶意软件分类**。一个 `child_process.exec()` 调用在部署类技能中是正常的，但在 Markdown 格式化工具中就很可疑。LLM 评估器理解上下文，它问的是：「这个能力属于这里吗？」
+
 ## 什么是 Skill（技能）？
 
 **Skill** 是 AI Agent（如 [Claude Code](https://claude.com/claude-code)、[OpenClaw](https://openclaw.com)）的插件。每个技能包含：
@@ -191,6 +248,12 @@ console.log(fullResult.confidence) // 'high' | 'medium' | 'low'
 - 可选的元数据（YAML frontmatter）声明依赖、环境变量、安装规范
 
 技能可以非常强大 — 也可能非常危险。它们可以指示 AI Agent 执行 Shell 命令、访问你的凭证、读取你的文件、通过网络发送数据。**安装前务必先扫描。**
+
+## 相关项目
+
+- [ClawHub](https://clawhub.com) — 使用这套扫描器作为生产环境审核的技能市场
+- [OpenClaw](https://openclaw.com) — 开源 AI Agent 框架
+- [anygen-skills](https://github.com/Ken-Chy129/anygen-skills) — 一组经过本工具扫描的 AI 技能集合
 
 ## 许可证
 

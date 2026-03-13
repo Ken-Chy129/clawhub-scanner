@@ -4,9 +4,19 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> Security scanner for [ClawHub](https://clawhub.com) / [OpenClaw](https://openclaw.com) AI skills — static analysis + LLM-powered evaluation. Zero dependencies.
+[中文文档](./README_zh.md)
 
-AI agent skills (plugins) can execute shell commands, access credentials, read files, and make network requests. **clawhub-scanner** helps you detect malicious or suspicious skills before installing them.
+> The security scanning engine behind [ClawHub](https://clawhub.com) — this is how ClawHub evaluates every skill before it reaches users. Now available as a standalone npm package.
+
+## How ClawHub Scans Skills
+
+When a skill is published to ClawHub, it goes through a multi-layer security pipeline. **This package is exactly that pipeline**, extracted from the ClawHub platform so you can run the same checks locally:
+
+1. **Static Regex Scan** — Fast, offline pattern matching against known malicious signatures (dangerous exec, data exfiltration, crypto mining, prompt injection, etc.)
+2. **LLM Security Evaluation** — An LLM-as-judge evaluator that assesses the skill across 5 security dimensions, checking whether the skill's actual behavior is coherent with its stated purpose
+3. **Prompt Injection Detection** — Pre-scan filters that catch attempts to manipulate the LLM evaluator itself
+
+This is not a generic security scanner. It is purpose-built for the ClawHub / OpenClaw skill format and understands the specific threat model of AI agent plugins: skills that can instruct AI agents to run shell commands, access credentials, read files, and send data over the network.
 
 ## Features
 
@@ -182,6 +192,53 @@ Detect prompt injection patterns in text content.
 | `suspicious.prompt_injection_instructions` | warn | Prompt injection in markdown |
 | `suspicious.install_untrusted_source` | warn | URL shorteners or raw IPs |
 
+## How It Works — The ClawHub Security Pipeline
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   Skill Published                       │
+│              (SKILL.md + code files)                    │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│  Layer 1: Static Regex Scan                             │
+│  ─────────────────────────                              │
+│  • Pattern match against known malicious signatures     │
+│  • Check code files for dangerous APIs                  │
+│  • Check configs for suspicious URLs                    │
+│  • Check markdown for prompt injection                  │
+│  Result: clean / suspicious / malicious                 │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│  Layer 2: Prompt Injection Pre-filter                   │
+│  ────────────────────────────────                       │
+│  • Detect "ignore previous instructions" patterns       │
+│  • Catch system prompt override attempts                │
+│  • Flag hidden base64 blocks & unicode control chars    │
+│  • Feed signals to LLM as adversarial context           │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│  Layer 3: LLM-as-Judge Evaluation                       │
+│  ────────────────────────────                           │
+│  5-dimension coherence analysis:                        │
+│  1. Purpose ↔ Capability alignment                      │
+│  2. Instruction scope boundaries                        │
+│  3. Install mechanism risk                              │
+│  4. Credential proportionality                          │
+│  5. Persistence & privilege assessment                  │
+│                                                         │
+│  Verdict: benign / suspicious / malicious               │
+│  + confidence level + plain-language user guidance      │
+└─────────────────────────────────────────────────────────┘
+```
+
+The key insight of this scanner is **coherence detection, not malware classification**. A `child_process.exec()` call is normal in a deployment skill but suspicious in a markdown formatter. The LLM evaluator understands context and asks: "does this capability belong here?"
+
 ## What is a Skill?
 
 A **skill** is a plugin for AI agents (like [Claude Code](https://claude.com/claude-code) or [OpenClaw](https://openclaw.com)). Each skill contains:
@@ -191,6 +248,12 @@ A **skill** is a plugin for AI agents (like [Claude Code](https://claude.com/cla
 - Optional metadata (YAML frontmatter) declaring dependencies, env vars, install specs
 
 Skills can be powerful — and dangerous. They can instruct AI agents to run shell commands, access your credentials, read your files, and send data over the network. **Always scan before installing.**
+
+## Related Projects
+
+- [ClawHub](https://clawhub.com) — The skill marketplace where this scanner runs in production
+- [OpenClaw](https://openclaw.com) — Open-source AI agent framework
+- [anygen-skills](https://github.com/Ken-Chy129/anygen-skills) — A collection of AI skills scanned by this tool
 
 ## License
 
