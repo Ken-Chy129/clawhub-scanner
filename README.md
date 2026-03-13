@@ -6,11 +6,11 @@
 
 [中文文档](./README_zh.md)
 
-> ClawHub 上每个技能发布前都会跑这套检测。现在把它抽成了独立的 npm 包，你也可以在本地跑同样的安全扫描。
+> Implements the same security scanning logic as [ClawHub](https://clawhub.com)'s built-in Security Scan — run the exact same checks locally before publishing your skill. Zero dependencies.
 
-## How ClawHub Scans Skills
+## How It Relates to ClawHub
 
-When you publish a skill to [ClawHub](https://clawhub.com), it goes through a multi-layer security pipeline before reaching users. This package is that pipeline — extracted so you can run the same checks locally before publishing, or integrate them into your own workflow:
+[ClawHub](https://clawhub.com) has a built-in Security Scan that reviews every skill before it reaches users. This package implements the same multi-layer scanning logic, so you can run the exact same checks locally — catch issues before publishing, or integrate them into your own CI/CD pipeline:
 
 1. **Static Regex Scan** — Fast, offline pattern matching against known malicious signatures (dangerous exec, data exfiltration, crypto mining, prompt injection, etc.)
 2. **LLM Security Evaluation** — An LLM-as-judge evaluator that assesses the skill across 5 security dimensions, checking whether the skill's actual behavior is coherent with its stated purpose
