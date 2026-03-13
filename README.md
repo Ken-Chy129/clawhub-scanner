@@ -6,11 +6,11 @@
 
 [中文文档](./README_zh.md)
 
-> The security scanning engine behind [ClawHub](https://clawhub.com) — this is how ClawHub evaluates every skill before it reaches users. Now available as a standalone npm package.
+> ClawHub 上每个技能发布前都会跑这套检测。现在把它抽成了独立的 npm 包，你也可以在本地跑同样的安全扫描。
 
 ## How ClawHub Scans Skills
 
-When a skill is published to ClawHub, it goes through a multi-layer security pipeline. **This package is exactly that pipeline**, extracted from the ClawHub platform so you can run the same checks locally:
+When you publish a skill to [ClawHub](https://clawhub.com), it goes through a multi-layer security pipeline before reaching users. This package is that pipeline — extracted so you can run the same checks locally before publishing, or integrate them into your own workflow:
 
 1. **Static Regex Scan** — Fast, offline pattern matching against known malicious signatures (dangerous exec, data exfiltration, crypto mining, prompt injection, etc.)
 2. **LLM Security Evaluation** — An LLM-as-judge evaluator that assesses the skill across 5 security dimensions, checking whether the skill's actual behavior is coherent with its stated purpose
