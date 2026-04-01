@@ -4,99 +4,99 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[中文文档](./README_zh.md)
+[English](./README_en.md)
 
-> Implements the same security scanning logic as [ClawHub](https://clawhub.com)'s built-in Security Scan — run the exact same checks locally before publishing your skill. Zero dependencies.
+> 与 [ClawHub](https://clawhub.com) 内置 Security Scan 采用相同的扫描逻辑 — 在本地提前运行完全相同的安全检测，发布前就能发现问题。零依赖。
 
-## How It Relates to ClawHub
+## 和 ClawHub 的关系
 
-[ClawHub](https://clawhub.com) has a built-in Security Scan that reviews every skill before it reaches users. This package implements the same multi-layer scanning logic, so you can run the exact same checks locally — catch issues before publishing, or integrate them into your own CI/CD pipeline:
+[ClawHub](https://clawhub.com) 内置了 Security Scan 功能，会在技能上架前进行安全审查。这个包实现了与之相同的多层扫描逻辑，让你可以在本地运行完全一致的检测 — 发布前提前发现问题，也可以集成到自己的 CI/CD 流程中：
 
-1. **Static Regex Scan** — Fast, offline pattern matching against known malicious signatures (dangerous exec, data exfiltration, crypto mining, prompt injection, etc.)
-2. **LLM Security Evaluation** — An LLM-as-judge evaluator that assesses the skill across 5 security dimensions, checking whether the skill's actual behavior is coherent with its stated purpose
-3. **Prompt Injection Detection** — Pre-scan filters that catch attempts to manipulate the LLM evaluator itself
+1. **静态正则扫描** — 快速离线的模式匹配，检测已知恶意特征（危险执行、数据窃取、加密挖矿、Prompt 注入等）
+2. **LLM 安全评估** — 以 LLM 作为评审，从 5 个安全维度评估技能的实际行为是否与其声明的用途一致
+3. **Prompt 注入检测** — 预扫描过滤器，捕捉试图操纵 LLM 评估器的注入攻击
 
-This is not a generic security scanner. It is purpose-built for the ClawHub / OpenClaw skill format and understands the specific threat model of AI agent plugins: skills that can instruct AI agents to run shell commands, access credentials, read files, and send data over the network.
+这不是一个通用安全扫描器。它专为 ClawHub / OpenClaw 技能格式设计，理解 AI Agent 插件特有的威胁模型：技能可以指示 AI Agent 执行 Shell 命令、访问凭证、读取文件、通过网络发送数据。
 
-## Features
+## 功能特性
 
-- **Static Regex Scan** — Detects dangerous patterns without any API key:
-  - Shell command execution (`child_process`, `exec`, `spawn`)
-  - Dynamic code execution (`eval`, `new Function`)
-  - Crypto mining indicators (`stratum+tcp`, `coinhive`, `xmrig`)
-  - Data exfiltration (file read + network send)
-  - Credential harvesting (env var access + network send)
-  - Obfuscated code (hex sequences, long base64 payloads)
-  - Prompt injection patterns in markdown
-  - Suspicious URLs in config files (URL shorteners, raw IPs)
+- **静态正则扫描** — 无需 API Key，离线即可检测：
+  - Shell 命令执行（`child_process`、`exec`、`spawn`）
+  - 动态代码执行（`eval`、`new Function`）
+  - 加密货币挖矿特征（`stratum+tcp`、`coinhive`、`xmrig`）
+  - 数据窃取行为（文件读取 + 网络发送）
+  - 凭证收割（环境变量访问 + 网络发送）
+  - 代码混淆（十六进制序列、长 base64 载荷）
+  - Markdown 中的 Prompt 注入模式
+  - 配置文件中的可疑 URL（短链接、裸 IP 地址）
 
-- **LLM Security Evaluation** — 5-dimension deep analysis:
-  - Purpose & capability alignment
-  - Instruction scope analysis
-  - Install mechanism risk
-  - Credential proportionality
-  - Persistence & privilege assessment
+- **LLM 安全评估** — 五维度深度分析：
+  - 目的与能力一致性
+  - 指令范围分析
+  - 安装机制风险
+  - 凭证比例合理性
+  - 持久化与权限评估
 
-- **Prompt Injection Detection** — Identifies common injection patterns:
-  - "Ignore previous instructions"
-  - "You are now a..."
-  - System prompt override attempts
-  - Hidden base64 blocks
-  - Unicode control characters
+- **Prompt 注入检测** — 识别常见注入模式：
+  - "忽略之前的所有指令"
+  - "你现在是一个..."
+  - System Prompt 覆盖
+  - 隐藏的 base64 块
+  - Unicode 控制字符
 
-## Install
+## 安装
 
 ```bash
-# Global install
+# 全局安装
 npm install -g clawhub-scanner
 
-# Or use directly with npx
+# 或直接用 npx 运行
 npx clawhub-scanner --help
 
-# Or install as project dependency
+# 或作为项目依赖安装
 npm install clawhub-scanner
 ```
 
-## CLI Usage
+## 命令行使用
 
 ```bash
-# Static scan (no API key needed)
+# 静态扫描（不需要 API Key）
 clawhub-scan --static ./my-skill
 
-# Full scan (static + LLM evaluation)
+# 完整扫描（静态 + LLM 评估）
 OPENAI_API_KEY=sk-xxx clawhub-scan ./my-skill
 
-# Scan multiple skills at once
+# 批量扫描多个技能
 clawhub-scan --static ./skill-a ./skill-b ./skill-c
 
-# JSON output (for CI/CD pipelines)
+# JSON 输出（适合 CI/CD 集成）
 clawhub-scan --static --json ./my-skill
 
-# Save results to a directory
+# 保存扫描结果到目录
 clawhub-scan --static --output ./results ./my-skill
 
-# Use a custom LLM model
+# 指定 LLM 模型
 clawhub-scan --model gpt-4o ./my-skill
 ```
 
-### CLI Options
+### 命令行参数
 
-| Option | Description |
-|--------|-------------|
-| `--static` | Static scan only (no LLM, no API key needed) |
-| `--json` | Output results as JSON |
-| `--output <dir>` | Save individual JSON results to directory |
-| `--model <name>` | LLM model name (default: `gpt-5-mini`) |
-| `--api-key <key>` | OpenAI API key (default: `OPENAI_API_KEY` env) |
+| 参数 | 说明 |
+|------|------|
+| `--static` | 仅静态扫描（不调用 LLM，无需 API Key） |
+| `--json` | 以 JSON 格式输出结果 |
+| `--output <dir>` | 将结果保存为 JSON 文件到指定目录 |
+| `--model <name>` | LLM 模型名称（默认：`gpt-5-mini`） |
+| `--api-key <key>` | OpenAI API Key（默认读取 `OPENAI_API_KEY` 环境变量） |
 
-### Environment Variables
+### 环境变量
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | Required for LLM evaluation |
-| `OPENAI_EVAL_MODEL` | Override default LLM model |
+| 变量 | 说明 |
+|------|------|
+| `OPENAI_API_KEY` | LLM 评估所需的 API Key |
+| `OPENAI_EVAL_MODEL` | 覆盖默认 LLM 模型 |
 
-## Library Usage
+## 库使用方式
 
 ```js
 import {
@@ -106,22 +106,22 @@ import {
   detectInjectionPatterns,
 } from 'clawhub-scanner'
 
-// Scan a skill directory
+// 扫描技能目录
 const result = await scanSkill('/path/to/skill', { staticOnly: true })
 console.log(result.staticStatus)       // 'clean' | 'suspicious' | 'malicious'
-console.log(result.staticScan.findings) // Array of findings
+console.log(result.staticScan.findings) // 发现的问题数组
 
-// Scan raw content (no disk I/O)
+// 直接扫描内容（无需磁盘 I/O）
 const scan = runStaticScan(skillMdContent, [
   { path: 'helper.js', content: 'const { exec } = require("child_process")...' },
 ])
 // => { status: 'suspicious', reasonCodes: [...], findings: [...] }
 
-// Detect prompt injection patterns
-const signals = detectInjectionPatterns('Ignore all previous instructions')
+// 检测 Prompt 注入
+const signals = detectInjectionPatterns('忽略之前的所有指令')
 // => ['ignore-previous-instructions']
 
-// Full scan with LLM evaluation
+// 带 LLM 的完整扫描
 const fullResult = await scanSkill('/path/to/skill', {
   apiKey: 'sk-xxx',
   model: 'gpt-4o',
@@ -130,25 +130,25 @@ console.log(fullResult.verdict)    // 'benign' | 'suspicious' | 'malicious'
 console.log(fullResult.confidence) // 'high' | 'medium' | 'low'
 ```
 
-### API Reference
+### API 参考
 
 #### `scanSkill(dirPath, options?)` → `Promise<ScanResult | null>`
 
-Scan a skill directory. Returns `null` if no `SKILL.md` is found.
+扫描技能目录。如果未找到 `SKILL.md` 则返回 `null`。
 
 #### `scanSkillContent(skillMd, files?, options?)` → `Promise<ScanResult>`
 
-Scan from raw content without reading from disk.
+从原始内容扫描，无需读取磁盘。
 
 #### `runStaticScan(skillMd, files)` → `StaticScanResult`
 
-Run regex-based static analysis only. Synchronous, no API key needed.
+仅运行基于正则的静态分析。同步方法，无需 API Key。
 
 #### `detectInjectionPatterns(text)` → `string[]`
 
-Detect prompt injection patterns in text content.
+检测文本中的 Prompt 注入模式。
 
-## Scan Result Format
+## 扫描结果格式
 
 ```json
 {
@@ -179,82 +179,82 @@ Detect prompt injection patterns in text content.
 }
 ```
 
-## Reason Codes
+## 规则码说明
 
-| Code | Severity | Description |
-|------|----------|-------------|
-| `suspicious.dangerous_exec` | critical | Shell command execution via child_process |
-| `suspicious.dynamic_code_execution` | critical | eval() or new Function() usage |
-| `malicious.crypto_mining` | critical | Crypto mining indicators |
-| `malicious.env_harvesting` | critical | Env var access + network send |
-| `suspicious.potential_exfiltration` | warn | File read + network send |
-| `suspicious.obfuscated_code` | warn | Obfuscated/encoded payloads |
-| `suspicious.prompt_injection_instructions` | warn | Prompt injection in markdown |
-| `suspicious.install_untrusted_source` | warn | URL shorteners or raw IPs |
+| 规则码 | 严重级别 | 说明 |
+|--------|----------|------|
+| `suspicious.dangerous_exec` | critical | 通过 child_process 执行 Shell 命令 |
+| `suspicious.dynamic_code_execution` | critical | 使用 eval() 或 new Function() |
+| `malicious.crypto_mining` | critical | 加密货币挖矿特征 |
+| `malicious.env_harvesting` | critical | 环境变量访问 + 网络发送 |
+| `suspicious.potential_exfiltration` | warn | 文件读取 + 网络发送 |
+| `suspicious.obfuscated_code` | warn | 混淆/编码的载荷 |
+| `suspicious.prompt_injection_instructions` | warn | Markdown 中的 Prompt 注入 |
+| `suspicious.install_untrusted_source` | warn | 短链接或裸 IP 地址 |
 
-## How It Works — The ClawHub Security Pipeline
+## 工作原理 — ClawHub 安全检测流水线
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   Skill Published                       │
-│              (SKILL.md + code files)                    │
+│                    技能发布                              │
+│             (SKILL.md + 代码文件)                        │
 └─────────────────┬───────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Layer 1: Static Regex Scan                             │
-│  ─────────────────────────                              │
-│  • Pattern match against known malicious signatures     │
-│  • Check code files for dangerous APIs                  │
-│  • Check configs for suspicious URLs                    │
-│  • Check markdown for prompt injection                  │
-│  Result: clean / suspicious / malicious                 │
+│  第一层：静态正则扫描                                     │
+│  ─────────────────                                      │
+│  • 匹配已知恶意特征模式                                   │
+│  • 检查代码中的危险 API 调用                               │
+│  • 检查配置文件中的可疑 URL                                │
+│  • 检查 Markdown 中的 Prompt 注入                         │
+│  结果：clean / suspicious / malicious                    │
 └─────────────────┬───────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Layer 2: Prompt Injection Pre-filter                   │
-│  ────────────────────────────────                       │
-│  • Detect "ignore previous instructions" patterns       │
-│  • Catch system prompt override attempts                │
-│  • Flag hidden base64 blocks & unicode control chars    │
-│  • Feed signals to LLM as adversarial context           │
+│  第二层：Prompt 注入预过滤                                │
+│  ──────────────────────                                 │
+│  • 检测「忽略之前的所有指令」等模式                         │
+│  • 捕获 System Prompt 覆盖尝试                           │
+│  • 标记隐藏的 base64 块和 Unicode 控制字符                 │
+│  • 将检测信号作为对抗性上下文传递给 LLM                     │
 └─────────────────┬───────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Layer 3: LLM-as-Judge Evaluation                       │
-│  ────────────────────────────                           │
-│  5-dimension coherence analysis:                        │
-│  1. Purpose ↔ Capability alignment                      │
-│  2. Instruction scope boundaries                        │
-│  3. Install mechanism risk                              │
-│  4. Credential proportionality                          │
-│  5. Persistence & privilege assessment                  │
+│  第三层：LLM 评审评估                                     │
+│  ────────────────                                       │
+│  五维度一致性分析：                                       │
+│  1. 目的 ↔ 能力 一致性                                    │
+│  2. 指令范围边界                                         │
+│  3. 安装机制风险                                         │
+│  4. 凭证比例合理性                                       │
+│  5. 持久化与权限评估                                      │
 │                                                         │
-│  Verdict: benign / suspicious / malicious               │
-│  + confidence level + plain-language user guidance      │
+│  判定：benign / suspicious / malicious                   │
+│  + 置信度 + 面向用户的自然语言指导                          │
 └─────────────────────────────────────────────────────────┘
 ```
 
-The key insight of this scanner is **coherence detection, not malware classification**. A `child_process.exec()` call is normal in a deployment skill but suspicious in a markdown formatter. The LLM evaluator understands context and asks: "does this capability belong here?"
+这个扫描器的核心理念是**一致性检测，而非恶意软件分类**。一个 `child_process.exec()` 调用在部署类技能中是正常的，但在 Markdown 格式化工具中就很可疑。LLM 评估器理解上下文，它问的是：「这个能力属于这里吗？」
 
-## What is a Skill?
+## 什么是 Skill（技能）？
 
-A **skill** is a plugin for AI agents (like [Claude Code](https://claude.com/claude-code) or [OpenClaw](https://openclaw.com)). Each skill contains:
+**Skill** 是 AI Agent（如 [Claude Code](https://claude.com/claude-code)、[OpenClaw](https://openclaw.com)）的插件。每个技能包含：
 
-- `SKILL.md` — Instructions that tell the AI agent what to do
-- Optional code files (`.js`, `.py`, `.sh`, etc.)
-- Optional metadata (YAML frontmatter) declaring dependencies, env vars, install specs
+- `SKILL.md` — 告诉 AI Agent 要做什么的指令文档
+- 可选的代码文件（`.js`、`.py`、`.sh` 等）
+- 可选的元数据（YAML frontmatter）声明依赖、环境变量、安装规范
 
-Skills can be powerful — and dangerous. They can instruct AI agents to run shell commands, access your credentials, read your files, and send data over the network. **Always scan before installing.**
+技能可以非常强大 — 也可能非常危险。它们可以指示 AI Agent 执行 Shell 命令、访问你的凭证、读取你的文件、通过网络发送数据。**安装前务必先扫描。**
 
-## Related Projects
+## 相关项目
 
-- [ClawHub](https://clawhub.com) — The skill marketplace where this scanner runs in production
-- [OpenClaw](https://openclaw.com) — Open-source AI agent framework
-- [anygen-skills](https://github.com/Ken-Chy129/anygen-skills) — A collection of AI skills scanned by this tool
+- [ClawHub](https://clawhub.com) — 使用这套扫描器作为生产环境审核的技能市场
+- [OpenClaw](https://openclaw.com) — 开源 AI Agent 框架
+- [anygen-skills](https://github.com/Ken-Chy129/anygen-skills) — 一组经过本工具扫描的 AI 技能集合
 
-## License
+## 许可证
 
 MIT
