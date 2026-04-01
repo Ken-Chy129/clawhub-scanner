@@ -249,12 +249,6 @@ console.log(fullResult.confidence) // 'high' | 'medium' | 'low'
 
 技能可以非常强大 — 也可能非常危险。它们可以指示 AI Agent 执行 Shell 命令、访问你的凭证、读取你的文件、通过网络发送数据。**安装前务必先扫描。**
 
-## 相关项目
-
-- [ClawHub](https://clawhub.com) — 使用这套扫描器作为生产环境审核的技能市场
-- [OpenClaw](https://openclaw.com) — 开源 AI Agent 框架
-- [anygen-skills](https://github.com/Ken-Chy129/anygen-skills) — 一组经过本工具扫描的 AI 技能集合
-
 ## 许可证
 
 MIT
